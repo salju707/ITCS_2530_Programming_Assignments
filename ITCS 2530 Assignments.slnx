@@ -3,5 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ITCS 2530 Assignments.vcxproj" />
+  <Folder Name="/Solution Items/" />
+  <Project Path="ITCS 2530 Assignments.vcxproj" Id="c2956e4b-2dba-445b-956c-8ffe5910c88e" />
 </Solution>
