@@ -1,0 +1,9 @@
+====== Photo Settings Report ======
+Photographer:                Sally Smith
+Aperture (f/):                     2.800
+Shutter speed (1/):              500.000
+ISO:                             400
+Shutter time (ms):                 2.000
+Brightness score:                  0.102
+Shutter if ISO doubles (1/):        1000.000
+===================================
