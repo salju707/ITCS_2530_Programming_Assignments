@@ -213,7 +213,7 @@ double calcShutterMs(double shutterDenom)
 	return shutterSeconds * 1000;
 }
 
-//Brightness score using ewuation: (ISO * time / aperture^2)
+//Brightness score using equation: (ISO * time / aperture^2)
 double calcBrightness(int iso, double shutterDenom, double aperture)
 {
 	double shutterSeconds = 1.0 / shutterDenom;
