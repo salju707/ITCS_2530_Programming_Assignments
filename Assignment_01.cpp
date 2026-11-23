@@ -26,7 +26,9 @@ string getName();
 double getAperture();
 double getShutterDenom();
 int getISO();
+void getShutterSamples(double samples[], int size);
 double calcShutterMs(double shutterDenom);
+double calcAverageShutterMs(const double samples[], int size);
 double calcBrightness(int iso, double shutterDenom, double aperture);
 double calcFasterShutter(double shutterDenom);
 void displayMenu();
@@ -35,9 +37,12 @@ void showRecipe(string name, double aperture, double shutterDenom, int iso);
 void showDetails(double shutterMs, double brightness, int iso, double shutterDenom);
 void showIsoTip(double fasterShutter, int iso, double shutterDenom);
 void displayReport(string name, double aperture, double shutterDenom, int iso,
-	double shutterMs, double brightness, double fasterShutter);
+	double shutterMs, double brightness, double fasterShutter,
+	const double samples[], int size, double averageShutterMs);
 bool saveReport(string name, double aperture, double shutterDenom, int iso,
-	double shutterMs, double brightness, double fasterShutter);
+	double shutterMs, double brightness, double fasterShutter,
+	const double samples[], int size, double averageShutterMs);
+
 
 int main()
 {
@@ -49,6 +54,10 @@ int main()
 	int menuChoice;
 	char again;
 
+	const int NUMBER_OF_SHOTS = 3;
+	double shutterSamples[NUMBER_OF_SHOTS] = { 0.0, 0.0, 0.0 };
+
+
 	displayBanner();
 	// Collect and validate three exposure setting (plus name)
 	name = getName();
@@ -56,10 +65,18 @@ int main()
 	shutterDenom = getShutterDenom();
 	iso = getISO();
 
+
+	// Collect three shutter speed samples
+	getShutterSamples(shutterSamples, NUMBER_OF_SHOTS);
+
+
 	//derived values
 	double shutterMs = calcShutterMs(shutterDenom);
 	double brightness = calcBrightness(iso, shutterDenom, aperture);
 	double fasterShutter = calcFasterShutter(shutterDenom);
+
+	// Calculate the average shutter time
+	double averageShutterMs = calcAverageShutterMs(shutterSamples, NUMBER_OF_SHOTS);
 
 	// do while loop: repeats until user says no
 	do
@@ -94,9 +111,12 @@ int main()
 	} while (again == 'y' || again == 'Y');
 
 	//show summary table, then save to a file
-	displayReport(name, aperture, shutterDenom, iso, shutterMs, brightness, fasterShutter);
+	displayReport(name, aperture, shutterDenom, iso, shutterMs, brightness, fasterShutter,
+		shutterSamples, NUMBER_OF_SHOTS, averageShutterMs);
 
-	if (saveReport(name, aperture, shutterDenom, iso, shutterMs, brightness, fasterShutter))
+
+
+	if (saveReport(name, aperture, shutterDenom, iso, shutterMs, brightness, fasterShutter, shutterSamples, NUMBER_OF_SHOTS, averageShutterMs))
 	{
 		setColor(COLOR_RESULT);
 		cout << "\nYour report was saved to report.txt\n";
@@ -203,6 +223,33 @@ int getISO()
 	return iso;
 }
 
+
+// Ask for three shutter speeds
+void getShutterSamples(double samples[], int size)
+{
+	double shutterSpeed;
+
+	for (int i = 0; i < size; i++)
+	{
+		cout << "Enter shutter speed " << i + 1 << " (1/): ";
+		cin >> shutterSpeed;
+
+		// Check for invalid input
+		while (cin.fail() || shutterSpeed <= 0)
+		{
+			cin.clear();
+			cin.ignore(1000, '\n');
+			setColor(COLOR_ERROR);
+			cout << "Invalid shutter speed. Enter a positive number: 1/";
+			setColor(COLOR_DEFAULT);
+			cin >> shutterSpeed;
+		}
+
+		samples[i] = shutterSpeed;
+	}
+}
+
+
 		// CALCULATIONS
 		
 		
@@ -212,6 +259,21 @@ double calcShutterMs(double shutterDenom)
 	double shutterSeconds = 1.0 / shutterDenom;
 	return shutterSeconds * 1000;
 }
+
+
+// Calculate the average shutter time
+double calcAverageShutterMs(const double samples[], int size)
+{
+	double totalMs = 0.0;
+
+	for (int i = 0; i < size; i++)
+	{
+		totalMs = totalMs + calcShutterMs(samples[i]);
+	}
+
+	return totalMs / size;
+}
+
 
 //Brightness score using equation: (ISO * time / aperture^2)
 double calcBrightness(int iso, double shutterDenom, double aperture)
@@ -270,6 +332,37 @@ void showRecipe(string name, double aperture, double shutterDenom, int iso)
 	{
 		cout << "Not a freeze-the-action setup, but it could work for other shots.\n";
 	}
+
+	// Categorize the shutter speed
+	enum ShutterCategory { FAST_SHOT, NORMAL_SHOT, SLOW_SHOT };
+	ShutterCategory shutterCategory;
+
+	if (shutterDenom >= FAST_SHUTTER)
+	{
+		shutterCategory = FAST_SHOT;
+	}
+	else if (shutterDenom <= SLOW_SHUTTER)
+	{
+		shutterCategory = SLOW_SHOT;
+	}
+	else
+	{
+		shutterCategory = NORMAL_SHOT;
+	}
+
+	// Show the shutter speed category
+	switch (shutterCategory)
+	{
+	case FAST_SHOT:
+		cout << "Shutter category: Fast\n";
+		break;
+	case NORMAL_SHOT:
+		cout << "Shutter category: Normal\n";
+		break;
+	case SLOW_SHOT:
+		cout << "Shutter category: Slow\n";
+		break;
+	}
 	setColor(COLOR_DEFAULT);
 }
 
@@ -318,7 +411,9 @@ void showIsoTip(double fasterShutter, int iso, double shutterDenom)
 
 // Prints the summary table to the console
 void displayReport(string name, double aperture, double shutterDenom, int iso,
-	double shutterMs, double brightness, double fasterShutter)
+	double shutterMs, double brightness, double fasterShutter,
+	const double samples[], int size, double averageShutterMs)
+
 {
 	cout << fixed << setprecision(3);
 	setColor(COLOR_REPORT);
@@ -330,13 +425,27 @@ void displayReport(string name, double aperture, double shutterDenom, int iso,
 	cout << left << setw(30) << "Shutter time (ms):" << right << setw(16) << shutterMs << "\n";
 	cout << left << setw(30) << "Brightness score:" << right << setw(16) << brightness << "\n";
 	cout << left << setw(30) << "Shutter if ISO doubles (1/):" << right << setw(16) << fasterShutter << "\n";
+
+	// Show the three shutter speed samples
+	cout << "\n--- Shutter Speed Samples ---\n";
+
+	for (int i = 0; i < size; i++)
+	{
+		cout << "Sample " << i + 1 << ": 1/" << samples[i] << "\n";
+	}
+
+	cout << left << setw(30) << "Average shutter time (ms):"
+		<< right << setw(16) << averageShutterMs << "\n";
+
 	cout << "===================================\n";
 	setColor(COLOR_DEFAULT);
 }
 
 // writes summary table to report.txt
+
 bool saveReport(string name, double aperture, double shutterDenom, int iso,
-	double shutterMs, double brightness, double fasterShutter)
+	double shutterMs, double brightness, double fasterShutter,
+	const double samples[], int size, double averageShutterMs)
 {
 	ofstream reportFile("report.txt");
 	if (reportFile.fail())
@@ -353,6 +462,18 @@ bool saveReport(string name, double aperture, double shutterDenom, int iso,
 	reportFile << left << setw(30) << "Shutter time (ms):" << right << setw(16) << shutterMs << "\n";
 	reportFile << left << setw(30) << "Brightness score:" << right << setw(16) << brightness << "\n";
 	reportFile << left << setw(30) << "Shutter if ISO doubles (1/):" << right << setw(16) << fasterShutter << "\n";
+
+	// Save the three shutter speed samples
+	reportFile << "\n--- Shutter Speed Samples ---\n";
+
+	for (int i = 0; i < size; i++)
+	{
+		reportFile << "Sample " << i + 1 << ": 1/" << samples[i] << "\n";
+	}
+
+	reportFile << left << setw(30) << "Average shutter time (ms):"
+		<< right << setw(16) << averageShutterMs << "\n";
+
 	reportFile << "===================================\n";
 
 	reportFile.close();
