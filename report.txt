@@ -1,9 +1,15 @@
 ====== Photo Settings Report ======
-Photographer:                 Sally Al Juboori
+Photographer:                              Moe
 Aperture (f/):                           2.800
 Shutter speed (1/):                    250.000
 ISO:                                       400
 Shutter time (ms):                       4.000
 Brightness score:                        0.204
 Shutter if ISO doubles (1/):           500.000
+
+--- Shutter Speed Samples ---
+Sample 1: 1/100.000
+Sample 2: 1/200.000
+Sample 3: 1/400.000
+Average shutter time (ms):               5.833
 ===================================
